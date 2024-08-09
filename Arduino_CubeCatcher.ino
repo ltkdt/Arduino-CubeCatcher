@@ -6,7 +6,9 @@
 struct player{
   int x;
   int y;
-} Player;
+};
+
+player Player;
 
 struct cube{
   int x;
@@ -30,6 +32,10 @@ cube Cube;
 int leftState = 0;
 int rightState = 0;
 
+unsigned long previousStamp = 5000; // This is the point where the game should start
+const long AllowedClickInterval = 500;
+
+
 Adafruit_SH1106G display = Adafruit_SH1106G(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 
 /*
@@ -48,6 +54,7 @@ void setup(){
   display.display();
   display.clearDisplay();
 
+  gameDataLoader();
   menu();
 
 }
@@ -86,7 +93,43 @@ bool collisionDectection(){
   return false;
 }
 
+void gameDataLoader(){
+  Player.x = 63;
+  Player.y = 127;
+}
+
 void loop(){
+
+  unsigned long currentStamp = millis();
+
+
+
+  leftState = digitalRead(LEFT_PIN);
+  rightState = digitalRead(RIGHT_PIN);
+
+  
+  if (leftState == HIGH && (currentStamp - previousStamp >= AllowedClickInterval)) {
+    previousStamp =  millis();
+    if(Player.x <= 1){
+      Player.x+=1;
+    }
+    else{
+      Player.x-=1;
+    }
+    Serial.println( String(Player.x) );
+  }
+
+  if (rightState == HIGH && (currentStamp - previousStamp >= AllowedClickInterval) ){
+    previousStamp = millis();
+    if(Player.x >= 127){
+      Player.x-=1;
+    }else{
+    Player.x += 1;
+    }
+    Serial.println( String(Player.x) );
+  }
+
+  /*
   Player.x = 63;
   Player.y = 127;
   display.drawRect(Player.x, Player.y, 2, 2, SH110X_WHITE);
@@ -109,14 +152,5 @@ void loop(){
   }
 
 
-  leftState = digitalRead(LEFT_PIN);
-  rightState = digitalRead(RIGHT_PIN);
-
-  
-  if (leftState == HIGH){
-    Serial.println("Move left detected");
-  }
-  if (rightState == HIGH){
-    Serial.println("Move right detected");
-  }
+  */
 }
