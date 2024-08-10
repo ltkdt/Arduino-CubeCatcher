@@ -31,9 +31,11 @@ cube Cube;
 
 int leftState = 0;
 int rightState = 0;
+int score = 0;
 
 unsigned long previousStamp = 5000; // This is the point where the game should start
-const long AllowedClickInterval = 500;
+const long AllowedClickInterval = 40;
+const long AllowedCubeMovementInterval = 50;
 
 
 Adafruit_SH1106G display = Adafruit_SH1106G(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
@@ -62,9 +64,7 @@ void setup(){
 void menu(){
   delay(100);
 
-  // display.clearDisplay();
-  display.setTextColor(SH110X_WHITE);
-
+  // Draw a cube 
   display.drawFastVLine(56, 12, 16, SH110X_WHITE);
   display.drawFastVLine(64, 20, 16, SH110X_WHITE);
   display.drawFastVLine(72, 12, 16, SH110X_WHITE);
@@ -77,6 +77,11 @@ void menu(){
 
   display.drawLine(56, 12,64, 20, SH110X_WHITE);
   display.drawLine(72, 12, 64, 20, SH110X_WHITE);
+
+  // Title
+
+  display.setTextColor(SH110X_WHITE);
+  
   display.setTextSize(1);
   
   display.setCursor(8, 48);
@@ -88,69 +93,77 @@ void menu(){
   display.clearDisplay();
 }
 
-
-bool collisionDectection(){
-  return false;
+bool collisionDectection(int player_x, int player_y, int cube_x, int cube_y, int size){
+  if( (abs(player_x - cube_x) < size) && (abs(player_y - cube_y) < size) ){  
+    return true;
+  }
+  else {
+    return false;
+  }
 }
+
+// The initial position of the game objects
 
 void gameDataLoader(){
   Player.x = 63;
-  Player.y = 127;
+  Player.y = 60;
+
+  Cube.x = 62;
+  Cube.y = 1;
 }
 
 void loop(){
-
   unsigned long currentStamp = millis();
 
+  display.drawRect(Player.x, Player.y, 4, 4, SH110X_WHITE);
 
-
+  display.drawRect(Cube.x, Cube.y, 4, 4, SH110X_WHITE);
+  
   leftState = digitalRead(LEFT_PIN);
   rightState = digitalRead(RIGHT_PIN);
-
-  
+/*
+  I need to limit of the speed of how the player character moves along with the falling speed of the cube, but using delay() will stop the code from running
+  So I set up two time intervals declared at the beginning of the program, and only allow movement when the span between the previous movement and the current movement
+  is greater than my allowed time interval
+  For reference, see: https://docs.arduino.cc/built-in-examples/digital/BlinkWithoutDelay/
+*/
   if (leftState == HIGH && (currentStamp - previousStamp >= AllowedClickInterval)) {
     previousStamp =  millis();
     if(Player.x <= 1){
-      Player.x+=1;
+      Player.x++;
     }
     else{
-      Player.x-=1;
+      Player.x--;
     }
-    Serial.println( String(Player.x) );
   }
 
   if (rightState == HIGH && (currentStamp - previousStamp >= AllowedClickInterval) ){
     previousStamp = millis();
-    if(Player.x >= 127){
-      Player.x-=1;
+    if(Player.x >= 123){
+      Player.x--;
     }else{
-    Player.x += 1;
+      Player.x++;
     }
-    Serial.println( String(Player.x) );
   }
 
-  /*
-  Player.x = 63;
-  Player.y = 127;
-  display.drawRect(Player.x, Player.y, 2, 2, SH110X_WHITE);
+  if(currentStamp - previousStamp >= AllowedCubeMovementInterval){
+    Cube.y++;
+  }
+
+  if(Cube.y == 64){
+    Cube.y = 1;
+    Cube.x = static_cast<int>(random(1,123));
+  }
+
+  // No need for collision detection when the cube is too far away
+  if (Cube.y >= 56){
+    if(collisionDectection(Player.x, Player.y, Cube.x, Cube.y, 4)){
+      Cube.y = 1;
+      Cube.x = static_cast<int>(random(1,123));
+    }
+  }
+
   display.display();
 
-  Cube.x = static_cast<int>(random(1,128));
-  Cube.y = 1;
-
-  while(Cube.y != 127){
-    display.drawRect(Cube.x, Cube.y, 2, 2, SH110X_WHITE);
-    Cube.y++;
-    display.display();
-    delay(100);
-    display.clearDisplay();
-  }
-
-  if (Cube.y == 127){
-    Cube.x = static_cast<int>(random(1,128));
-    Cube.y = 1;
-  }
-
-
-  */
+  display.clearDisplay();
 }
