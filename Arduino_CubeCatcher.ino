@@ -3,20 +3,13 @@
 #include <Adafruit_GFX.h>
 #include <Adafruit_SH110X.h>
 
-struct player{
+struct game_object{
   int x;
   int y;
 };
 
-player Player;
-
-struct cube{
-  int x;
-  int y;
-};
-
-cube Cube;
-
+game_object Player;
+game_object Cube;
 
 #define I2C_ADDRESS 0x3C
 #define SCREEN_WIDTH 128
@@ -25,6 +18,7 @@ cube Cube;
 
 #define LEFT_PIN 7
 #define RIGHT_PIN 6
+#define BUZZER_PIN 2
 
 #define DELAY 20
 // DELAY = 1000 / FPS
@@ -33,9 +27,11 @@ int leftState = 0;
 int rightState = 0;
 int score = 0;
 
-unsigned long previousStamp = 5000; // This is the point where the game should start
-const long AllowedClickInterval = 40;
+unsigned long previousClicked = 5000; // This is when the game should start: 5 seconds after the code runs
+unsigned long previousCubeMovement = 5500;
+const long AllowedClickInterval = 20;
 const long AllowedCubeMovementInterval = 50;
+const long AllowedBuzzerInterval = 1000;
 
 
 Adafruit_SH1106G display = Adafruit_SH1106G(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
@@ -51,6 +47,7 @@ void setup(){
 
   pinMode(LEFT_PIN, INPUT);
   pinMode(RIGHT_PIN, INPUT); 
+  pinMode(BUZZER_PIN, OUTPUT);
 
   display.begin(I2C_ADDRESS, true);
   display.display();
@@ -103,21 +100,43 @@ bool collisionDectection(int player_x, int player_y, int cube_x, int cube_y, int
 }
 
 // The initial position of the game objects
-
 void gameDataLoader(){
   Player.x = 63;
   Player.y = 60;
 
   Cube.x = 62;
-  Cube.y = 1;
+  Cube.y = 16;
+}
+
+// This is a balancing feature preventing the case that the cube will spawn so far from the player that you can not catch it
+int generateCubeX(int player_x, int range){
+  int cube_x = static_cast<int>(random(player_x-range,player_x+range));
+  if(cube_x < 1){
+    cube_x = 1;
+  }
+  if(cube_x > 123){
+    cube_x = 123;
+  }
+  return cube_x;
 }
 
 void loop(){
   unsigned long currentStamp = millis();
 
-  display.drawRect(Player.x, Player.y, 4, 4, SH110X_WHITE);
+  display.setTextColor(SH110X_WHITE);
+  
+  display.setTextSize(1);
+  
+  display.setCursor(35, 1);
+  display.print("Score:");
 
-  display.drawRect(Cube.x, Cube.y, 4, 4, SH110X_WHITE);
+  display.setCursor(72, 1);
+  display.print(score); 
+
+  // Draw the player and the cube character
+
+  display.fillRect(Player.x, Player.y, 4, 4, SH110X_WHITE);
+  display.fillRect(Cube.x, Cube.y, 4, 4, SH110X_WHITE);
   
   leftState = digitalRead(LEFT_PIN);
   rightState = digitalRead(RIGHT_PIN);
@@ -127,8 +146,8 @@ void loop(){
   is greater than my allowed time interval
   For reference, see: https://docs.arduino.cc/built-in-examples/digital/BlinkWithoutDelay/
 */
-  if (leftState == HIGH && (currentStamp - previousStamp >= AllowedClickInterval)) {
-    previousStamp =  millis();
+  if (leftState == HIGH && (currentStamp - previousClicked >= AllowedClickInterval)) {
+    previousClicked =  millis();
     if(Player.x <= 1){
       Player.x++;
     }
@@ -137,8 +156,8 @@ void loop(){
     }
   }
 
-  if (rightState == HIGH && (currentStamp - previousStamp >= AllowedClickInterval) ){
-    previousStamp = millis();
+  if (rightState == HIGH && (currentStamp - previousClicked >= AllowedClickInterval) ){
+    previousClicked = millis();
     if(Player.x >= 123){
       Player.x--;
     }else{
@@ -146,20 +165,24 @@ void loop(){
     }
   }
 
-  if(currentStamp - previousStamp >= AllowedCubeMovementInterval){
+  if(currentStamp - previousCubeMovement >= AllowedCubeMovementInterval){
     Cube.y++;
+    previousCubeMovement = millis();
   }
 
   if(Cube.y == 64){
-    Cube.y = 1;
-    Cube.x = static_cast<int>(random(1,123));
+    Cube.y = 16;
+    Cube.x = generateCubeX(Player.x, 60);
+    tone(BUZZER_PIN, 400, 50);
+    score--;
   }
 
   // No need for collision detection when the cube is too far away
   if (Cube.y >= 56){
     if(collisionDectection(Player.x, Player.y, Cube.x, Cube.y, 4)){
-      Cube.y = 1;
-      Cube.x = static_cast<int>(random(1,123));
+      Cube.y = 16;
+      Cube.x = generateCubeX(Player.x, 60);
+      score++;
     }
   }
 
