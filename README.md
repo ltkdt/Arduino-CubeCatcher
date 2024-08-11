@@ -9,7 +9,7 @@ Components required:
 - Breadboard 
 - Jumper wires  
 - 1 Buzzer 
-- 2 10k Ohm resistors and 1 220 Ohm resistors 
+- 2 10k Ohm resistors
 - 2 push buttons  
 - 1 Oled screen with a resolution of 128x64 (Mine is a GME12864 model with SH1106 Driver)
 
@@ -23,7 +23,7 @@ Các thiết bị mình dùng:
 - Board cắm thử
 - Dây nối
 - 1 Còi chíp
-- 2 điện trở 10K Ohm và 1 điện trở 220 Ohm
+- 2 điện trở 10K Ohm
 - 2 nút 4 chân
 - 1 màn hình OLED với kích cỡ 128x64. Mẫu mình đang dùng là GME 12864 với driver SH1106
 
