@@ -20,16 +20,14 @@ game_object Cube;
 #define RIGHT_PIN 6
 #define BUZZER_PIN 2
 
-#define DELAY 20
-// DELAY = 1000 / FPS
 
 int leftState = 0;
 int rightState = 0;
 int score = 0;
 
 unsigned long previousClicked = 5000; // This is when the game should start: 5 seconds after the code runs
-unsigned long previousCubeMovement = 5500;
-const long AllowedClickInterval = 20;
+unsigned long previousCubeMovement = 5000;
+const long AllowedClickInterval = 25;
 const long AllowedCubeMovementInterval = 50;
 const long AllowedBuzzerInterval = 1000;
 
@@ -172,7 +170,7 @@ void loop(){
 
   if(Cube.y == 64){
     Cube.y = 16;
-    Cube.x = generateCubeX(Player.x, 60);
+    Cube.x = generateCubeX(Player.x, 80);
     tone(BUZZER_PIN, 400, 50);
     score--;
   }
@@ -181,7 +179,7 @@ void loop(){
   if (Cube.y >= 56){
     if(collisionDectection(Player.x, Player.y, Cube.x, Cube.y, 4)){
       Cube.y = 16;
-      Cube.x = generateCubeX(Player.x, 60);
+      Cube.x = generateCubeX(Player.x, 80);
       score++;
     }
   }
